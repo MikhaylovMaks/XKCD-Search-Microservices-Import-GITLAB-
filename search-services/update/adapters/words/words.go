@@ -2,17 +2,20 @@ package words
 
 import (
 	"context"
-	"errors"
 	"log/slog"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
 	wordspb "yadro.com/course/proto/words"
+	"yadro.com/course/update/core"
 )
 
 type Client struct {
 	log    *slog.Logger
 	client wordspb.WordsClient
+	conn   *grpc.ClientConn
 }
 
 func NewClient(address string, log *slog.Logger) (*Client, error) {
@@ -23,13 +26,29 @@ func NewClient(address string, log *slog.Logger) (*Client, error) {
 	return &Client{
 		client: wordspb.NewWordsClient(conn),
 		log:    log,
+		conn:   conn,
 	}, nil
 }
 
-func (c Client) Norm(ctx context.Context, phrase string) ([]string, error) {
-	return nil, nil
+func (c *Client) Close() error {
+	if c.conn == nil {
+		return nil // Already closed or not initialized
+	}
+	return c.conn.Close()
 }
 
-func (c Client) Ping(ctx context.Context) error {
-	return errors.New("implement me")
+func (c *Client) Norm(ctx context.Context, phrase string) ([]string, error) {
+	reply, err := c.client.Norm(ctx, &wordspb.WordsRequest{Phrase: phrase})
+	if err != nil {
+		if status.Code(err) == codes.ResourceExhausted {
+			return nil, core.ErrBadArguments
+		}
+		return nil, err
+	}
+	return reply.GetWords(), nil
+}
+
+func (c *Client) Ping(ctx context.Context) error {
+	_, err := c.client.Ping(ctx, nil)
+	return err
 }

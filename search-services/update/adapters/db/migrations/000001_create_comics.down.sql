@@ -1,1 +1,3 @@
-;
+DROP TABLE IF EXISTS comic_words;
+DROP TABLE IF EXISTS comics;
+DROP TABLE IF EXISTS search_index;

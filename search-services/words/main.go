@@ -5,12 +5,16 @@ import (
 	"flag"
 	"log"
 	"net"
+	"strconv"
 
 	"github.com/ilyakaznacheev/cleanenv"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/reflection"
+	"google.golang.org/grpc/status"
 	"google.golang.org/protobuf/types/known/emptypb"
 	wordspb "yadro.com/course/proto/words"
+	"yadro.com/course/words/words"
 )
 
 const maxPhraseLen = 20000
@@ -24,11 +28,19 @@ func (s *server) Ping(_ context.Context, _ *emptypb.Empty) (*emptypb.Empty, erro
 }
 
 func (s *server) Norm(_ context.Context, in *wordspb.WordsRequest) (*wordspb.WordsReply, error) {
-	return nil, nil
+	if len(in.GetPhrase()) > maxPhraseLen {
+		return nil, status.Error(
+			codes.ResourceExhausted,
+			"phrase is large than "+strconv.Itoa(maxPhraseLen),
+		)
+	}
+	return &wordspb.WordsReply{
+		Words: words.Norm(in.GetPhrase()),
+	}, nil
 }
 
 type Config struct {
-	Address string `yaml:"words_address" env:"WORDS_ADDRESS" env-default:"80"`
+	Address string `yaml:"words_address" env:"WORDS_ADDRESS" env-default:":80"`
 }
 
 func main() {

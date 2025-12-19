@@ -1,5 +1,8 @@
 lint: protolint golint
 
+unit:
+	go test -race -cover -coverprofile=coverage.out ./...
+
 protobuf:
 	protoc --go_out=. --go_opt=paths=source_relative \
                --go-grpc_out=. --go-grpc_opt=paths=source_relative \
@@ -16,8 +19,3 @@ protolint:
 
 golint:
 	golangci-lint run -E gocritic -v ./...
-
-test:
-	go test -race -coverprofile cover.out \
-		$(shell go list ./... | egrep -v 'yadro.com/course/(proto|api$$|update$$|words$$|search$$)')
-	go tool cover -html cover.out -o cover.html

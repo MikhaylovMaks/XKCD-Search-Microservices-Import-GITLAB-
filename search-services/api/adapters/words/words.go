@@ -2,17 +2,22 @@ package words
 
 import (
 	"context"
-	"errors"
+	"fmt"
 	"log/slog"
 
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/credentials/insecure"
+	"google.golang.org/grpc/status"
+	"google.golang.org/protobuf/types/known/emptypb"
+	"yadro.com/course/api/core"
 	wordspb "yadro.com/course/proto/words"
 )
 
 type Client struct {
 	log    *slog.Logger
 	client wordspb.WordsClient
+	conn   *grpc.ClientConn
 }
 
 func NewClient(address string, log *slog.Logger) (*Client, error) {
@@ -23,13 +28,37 @@ func NewClient(address string, log *slog.Logger) (*Client, error) {
 	return &Client{
 		client: wordspb.NewWordsClient(conn),
 		log:    log,
+		conn:   conn,
 	}, nil
 }
 
-func (c Client) Norm(ctx context.Context, phrase string) ([]string, error) {
-	return nil, nil
+func (c *Client) Close() error {
+	if c.conn == nil {
+		return fmt.Errorf("connection is nil")
+	}
+	return c.conn.Close()
+}
+
+func (c *Client) Norm(ctx context.Context, phrase string) ([]string, error) {
+	reply, err := c.client.Norm(ctx, &wordspb.WordsRequest{Phrase: phrase})
+	if err != nil {
+		if status.Code(err) == codes.ResourceExhausted {
+			return nil, core.ErrBadArguments
+		}
+		return nil, err
+	}
+	return reply.GetWords(), nil
 }
 
 func (c Client) Ping(ctx context.Context) error {
-	return errors.New("implement me")
+	_, err := c.client.Ping(ctx, &emptypb.Empty{})
+	if err != nil {
+		if status.Code(err) == codes.Unavailable {
+			return fmt.Errorf("service unavailable")
+		}
+		return fmt.Errorf("ping failed: %w", err)
+	}
+
+	return nil
+
 }
