@@ -2,8 +2,17 @@ container_runtime := $(shell which podman || which docker)
 
 $(info using ${container_runtime})
 
-up: down
-	${container_runtime} compose up --build -d
+build-images:
+	cd search-services && ${container_runtime} build -f Dockerfile.api -t api:latest .
+	cd search-services && ${container_runtime} build -f Dockerfile.frontend -t frontend:latest .
+	cd search-services && ${container_runtime} build -f Dockerfile.words -t words:latest .
+	cd search-services && ${container_runtime} build -f Dockerfile.update -t update:latest .
+	cd search-services && ${container_runtime} build -f Dockerfile.search -t search:latest .
+	cd search-services && ${container_runtime} build -f Dockerfile.bot -t bot:latest .
+	cd tests && ${container_runtime} build -t tests:latest .
+
+up: down build-images
+	${container_runtime} compose up -d
 
 down:
 	${container_runtime} compose down

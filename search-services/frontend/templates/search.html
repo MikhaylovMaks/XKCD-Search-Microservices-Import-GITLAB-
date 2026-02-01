@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XKCD Search - Поиск комиксов</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            color: white;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .search-box {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+            margin-bottom: 30px;
+        }
+
+        .search-form {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .search-form input {
+            flex: 1;
+            padding: 12px 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        .search-form input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .search-form button {
+            padding: 12px 24px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        .search-form button:hover {
+            background: #5568d3;
+        }
+
+        .limit-selector {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .limit-selector label {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .limit-selector select {
+            padding: 8px 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            font-size: 14px;
+        }
+
+        .results {
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+
+        .results-header {
+            margin-bottom: 20px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #e0e0e0;
+        }
+
+        .results-header h2 {
+            color: #333;
+            font-size: 1.5em;
+        }
+
+        .results-count {
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .comics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+        }
+
+        .comic-card {
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            padding: 15px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .comic-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+        }
+
+        .comic-card img {
+            width: 100%;
+            height: auto;
+            border-radius: 6px;
+            margin-bottom: 10px;
+        }
+
+        .comic-info {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .comic-id {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .comic-score {
+            background: #667eea;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+        }
+
+        .error {
+            background: #fee;
+            color: #c33;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border-left: 4px solid #c33;
+        }
+
+        .no-results {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+
+        .no-results h3 {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+        }
+
+        .admin-link {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: white;
+            color: #667eea;
+            padding: 12px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            transition: transform 0.2s;
+        }
+
+        .admin-link:hover {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 XKCD Search</h1>
+            <p>Поиск комиксов по ключевым словам</p>
+        </div>
+
+        <div class="search-box">
+            <form class="search-form" method="GET" action="/search">
+                <input type="text" name="phrase" placeholder="Введите фразу для поиска..." value="{{.Query}}" required>
+                <button type="submit">Найти</button>
+            </form>
+            <div class="limit-selector">
+                <label for="limit">Результатов на странице:</label>
+                <select name="limit" id="limit" onchange="updateLimit(this.value)">
+                    <option value="10">10</option>
+                    <option value="20">20</option>
+                    <option value="50">50</option>
+                    <option value="100">100</option>
+                </select>
+            </div>
+        </div>
+
+        {{if .Error}}
+        <div class="error">
+            <strong>Ошибка:</strong> {{.Error}}
+        </div>
+        {{end}}
+
+        {{if .HasResults}}
+        <div class="results">
+            <div class="results-header">
+                <h2>Результаты поиска</h2>
+                <div class="results-count">Найдено комиксов: {{.Total}}</div>
+            </div>
+            <div class="comics-grid">
+                {{range .Comics}}
+                <div class="comic-card">
+                    <img src="{{.URL}}" alt="Comic {{.ID}}" loading="lazy">
+                    <div class="comic-info">
+                        <span class="comic-id">#{{.ID}}</span>
+                        <span class="comic-score">Score: {{.Score}}</span>
+                    </div>
+                </div>
+                {{end}}
+            </div>
+        </div>
+        {{else if .Query}}
+        <div class="results">
+            <div class="no-results">
+                <h3>Ничего не найдено</h3>
+                <p>Попробуйте изменить поисковый запрос</p>
+            </div>
+        </div>
+        {{end}}
+    </div>
+
+    <a href="/admin" class="admin-link">⚙️ Админ-панель</a>
+
+    <script>
+        function updateLimit(limit) {
+            const url = new URL(window.location);
+            url.searchParams.set('limit', limit);
+            if (url.searchParams.get('phrase')) {
+                window.location = url.toString();
+            }
+        }
+
+        // Set selected limit
+        const urlParams = new URLSearchParams(window.location.search);
+        const limit = urlParams.get('limit') || '10';
+        document.getElementById('limit').value = limit;
+    </script>
+</body>
+</html>
+

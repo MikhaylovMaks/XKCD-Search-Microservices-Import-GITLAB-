@@ -1,0 +1,14 @@
+FROM golang:1.25 AS build
+
+COPY go.mod go.sum /src/
+COPY bot /src/bot
+
+ENV CGO_ENABLED=0
+RUN cd /src && go build -o /bot bot/main.go
+
+FROM alpine:3.20
+
+COPY --from=build /bot /bot
+
+ENTRYPOINT [ "/bot" ]
+

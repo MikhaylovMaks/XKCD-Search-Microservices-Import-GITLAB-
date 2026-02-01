@@ -1,0 +1,3 @@
+log_level: DEBUG
+bot_token: ''
+api_address: http://api:8080

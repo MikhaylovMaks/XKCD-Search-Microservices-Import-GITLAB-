@@ -3,6 +3,7 @@ module yadro.com/course
 go 1.25.1
 
 require (
+	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/nats-io/nats.go v1.47.0
 	google.golang.org/grpc v1.69.2
 	google.golang.org/protobuf v1.35.1
