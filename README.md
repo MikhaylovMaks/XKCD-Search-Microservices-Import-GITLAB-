@@ -1,4 +1,4 @@
-# XKCD Search Microservices
+# XKCD Search Microservices (YADRO)
 
 **Микросервисная поисковая система** для комиксов [XKCD](https://xkcd.com) с веб-интерфейсом, Telegram-ботом.
 
